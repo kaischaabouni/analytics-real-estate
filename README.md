@@ -21,6 +21,7 @@ This file contains several service definitions:
 - flower - The flower app for monitoring the environment. It is available at http://localhost:5555.
 - postgres - The database.
 - redis - The redis - broker that forwards messages from scheduler to worker.
+- db-analytics - The analytic database which the candidate will use to perform analysis and pipeline worflows 
 
 Some directories in the container are mounted, which means that their contents are synchronized between your computer and the container.
 - ./dags - you can put your DAG files here.
@@ -45,6 +46,11 @@ docker-compose down --volumes --remove-orphans
 rm -rf logs/
 ```
 
+Monitoring running containers (open another terminal)
+```bash
+watch docker-compose ps
+```
+
 To stop and delete containers, delete volumes with database data and download images, run:
 ```
 docker-compose down --volumes --rmi all
@@ -55,4 +61,6 @@ Once the cluster has started up, you can log in to the web interface and try to 
 
 The webserver is available at: http://localhost:8080. The default account has the login airflow and the password airflow.
 
+## About the test
 
+We have provided to you in this repository an example of dag which uses the `db-analytics` throught the connection `local_db_analytics` (which is defined in the `docker-compose.yml` file thanks to the env variable `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`)
