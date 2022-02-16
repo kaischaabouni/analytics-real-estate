@@ -39,6 +39,8 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    AIRFLOW__WEBSERVER__SECRET_KEY: VWZMSmh2YzlQOWNDdHJTeEZic2lKcVdEUmp6aE54NFc=
+    AIRFLOW_CONN_LOCAL_DB_ANALYTICS: postgresql+psycopg2://ma_user:ma_password@db-analytics/ma_db
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -232,6 +234,22 @@ services:
       - -c
       - airflow
 
+  db-analytics:
+    image: postgres:13
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: ma_user
+      POSTGRES_PASSWORD: ma_password
+      POSTGRES_DB: ma_db
+    volumes:
+      - analytics-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ma_user"]
+      interval: 5s
+      retries: 5
+    restart: always
+
   flower:
     <<: *airflow-common
     command: celery flower
@@ -250,3 +268,4 @@ services:
 
 volumes:
   postgres-db-volume:
+  analytics-db-volume:
