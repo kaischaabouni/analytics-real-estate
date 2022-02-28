@@ -1,5 +1,0 @@
-CREATE TABLE IF NOT EXISTS health_check (
-    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    datestamp DATE NOT NULL,
-    status VARCHAR NOT NULL
-);
