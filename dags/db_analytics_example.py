@@ -13,7 +13,7 @@ from airflow.operators.python_operator import PythonOperator
 
 def insert_values(conn, table_name, path_to_data):
     """
-    Insert data from a JSON (NEW LINE DELIMITER) in a postgres table (connection)
+    Insert data from a JSON (NEW LINE DELIMITER) to a postgres table (connection)
 
     :param conn: Connection to the postgres database
     :type conn: psycopg2.Connection
@@ -22,7 +22,7 @@ def insert_values(conn, table_name, path_to_data):
     :param path_to_data: Path to the JSON file containing data to load
     :type path_to_data: str
 
-    :return: This function return nothing, data should appears in table given in paramter
+    :return: This function return nothing, data should appears in DB table given in paramter
     """
     # Candidate have to implement this function
     pass
