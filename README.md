@@ -46,9 +46,9 @@ docker-compose down --volumes --remove-orphans
 rm -rf logs/
 ```
 
-Monitoring running containers (open another terminal)
+Display state of containers
 ```bash
-watch docker-compose ps
+docker-compose ps
 ```
 
 To stop and delete containers, delete volumes with database data and download images, run:
@@ -56,10 +56,41 @@ To stop and delete containers, delete volumes with database data and download im
 docker-compose down --volumes --rmi all
 ```
 
-Accessing the web interface
+**Exploring Analytics Postgres database**
+
+First get the name of the analytics db (container name ending like `*db-analytics_1`)
+
+```shell
+> docker ps
+```
+
+First enter in the PostgreSQL command prompt, by running the following command
+
+```shell
+> docker exec --user postgres -it <analytics_db_container> psql -U ma_user -d ma_db
+```
+
+Display tables 
+
+```shell
+> \dt+
+```
+
+(`+` add size and description columns)
+
+Then you can run sql query
+
+```shell
+> SELECT * FROM pet;
+```
+
+**Accessing the web interface**
+
 Once the cluster has started up, you can log in to the web interface and try to run some tasks.
 
-The webserver is available at: http://localhost:8080. The default account has the login airflow and the password airflow.
+The webserver is available at: http://localhost:8080.
+
+The default account has the login **airflow** and the password **airflow**.
 
 ## About the test
 
