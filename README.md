@@ -95,3 +95,5 @@ The default account has the login **airflow** and the password **airflow**.
 ## About the test
 
 We have provided to you in this repository an example of dag which uses the `db-analytics` throught the connection `local_db_analytics` (which is defined in the `docker-compose.yml` file thanks to the env variable `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`)
+
+A document will be communicated with you about what you have to do.
