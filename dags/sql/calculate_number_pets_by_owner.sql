@@ -4,7 +4,7 @@ AS SELECT
     owner,
     COUNT(*) AS number_of_pets
 FROM
-    {{ params.table_name }}
+    {{ params.table }}
 GROUP BY
     1
 ORDER BY

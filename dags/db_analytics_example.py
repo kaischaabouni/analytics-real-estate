@@ -11,16 +11,17 @@ from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.python_operator import PythonOperator
 
 
-def insert_values(conn, table_name, templates_dict, **kwargs):
+def insert_values(conn, table, templates_dict, **kwargs):
     """
     Insert data from a JSON (NEW LINE DELIMITER) to a postgres table (connection)
 
     :param conn: Connection to the postgres database
     :type conn: psycopg2.Connection
-    :param table_name: Name of the table where insert data (table need to be created before loading data)
-    :type table_name: str
-    :param path_to_data: Path to the JSON file containing data to load
-    :type path_to_data: str
+    :param table: Name of the table where insert data (table need to be created before loading data)
+    :type table: str
+    :param templates_dict: Dict containing the path to the data file to load (key: path_to_data),
+                            using this allow the file path to have good datestamp regarding the ds of airflow execution
+    :type templates_dict: Dict
 
     :return: This function return nothing, data should appears in DB table given in paramter
     """
@@ -31,7 +32,7 @@ def insert_values(conn, table_name, templates_dict, **kwargs):
 default_args = {
     "owner": "candidate",
     "depends_on_past": False,
-    "start_date": datetime(2022, 2, 28),
+    "start_date": datetime(2022, 3, 1),
     "email": ["data+airflow@meilleursagents.com"],
     "email_on_failure": False,
     "email_on_retry": False,
@@ -43,9 +44,9 @@ default_args = {
 # Define postgres connection to 
 conn = psycopg2.connect(database="ma_db", user='ma_user', password='ma_password', host='db-analytics', port='5432')
 # conn = Connection.get
-table_name = "pet"
+table = "pet"
 params={
-    "table_name": table_name
+    "table": table
 }
 
 # Get the current path
@@ -71,8 +72,8 @@ start_task = DummyOperator(
 # Create a table
 create_raw_table = PostgresOperator(
     dag=main_dag,
-    task_id="create_raw_table",
-    sql="sql/create_pet_table.sql",
+    task_id=f"create_{table}_table",
+    sql=f"sql/create_{table}_table.sql",
     # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
     postgres_conn_id="local_db_analytics",
     params=params,
@@ -80,8 +81,8 @@ create_raw_table = PostgresOperator(
 
 delete_partition = PostgresOperator(
     dag=main_dag,
-    task_id=f'delete_{table_name}_partition',
-    sql=f"DELETE FROM {table_name}" + " WHERE ds = '{{ ds }}';",
+    task_id=f'delete_{table}_partition',
+    sql=f"DELETE FROM {table}" + " WHERE ds = '{{ ds }}';",
     # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
     postgres_conn_id="local_db_analytics",
 )
@@ -90,14 +91,14 @@ delete_partition = PostgresOperator(
 # Candidate need to implement the function `insert_values`
 insert_raw_data = PythonOperator(
     dag=main_dag,
-    task_id='insert_data',
+    task_id=f'insert_{table}_data',
     python_callable= insert_values,
     op_kwargs = {
         "conn" : conn,
-        "table_name": table_name,
+        "table": table,
     },
     templates_dict = {
-        "path_to_data": os.path.join(path_to_data, table_name, f'{table_name}') + "_{{ ds_nodash }}.json",
+        "path_to_data": os.path.join(path_to_data, table, f'{table}') + "_{{ ds_nodash }}.json",
     },
 )
 

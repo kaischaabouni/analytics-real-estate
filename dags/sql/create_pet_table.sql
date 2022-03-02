@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{ params.table_name }} (
+CREATE TABLE IF NOT EXISTS pet (
     ds DATE NOT NULL,
     pet_id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
