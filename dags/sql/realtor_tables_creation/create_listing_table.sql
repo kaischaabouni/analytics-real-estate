@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS listing (
     start_ts TIMESTAMP ,
     end_ts TIMESTAMP,
     item_type VARCHAR,
-    PRIMARY KEY (ds, listing_id)
+    PRIMARY KEY (listing_id, ds)
 );

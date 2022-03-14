@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS past_sale (
     past_sale_name VARCHAR,
     sale_ts TIMESTAMP,
     item_type VARCHAR,
-    PRIMARY KEY (ds, past_sale_id)
+    PRIMARY KEY (past_sale_id, ds)
 
 
 );

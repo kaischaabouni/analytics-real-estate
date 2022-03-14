@@ -3,5 +3,5 @@ CREATE TABLE IF NOT EXISTS realtor (
     ds DATE NOT NULL,
     realtor_name VARCHAR,
     city_name VARCHAR,
-    PRIMARY KEY (ds, realtor_id)
+    PRIMARY KEY (realtor_id, ds)
 );

@@ -14,11 +14,11 @@ from airflow.operators.python_operator import PythonOperator
 
 def insert_realtor_values(conn, table, templates_dict, **kwargs):   
 
-    print ("_______________________________________________BEGIN_______________________________________") 
+    print ("_______________________________________________BEGIN_______________________________________")  
     print(templates_dict["var_ds"])
     cur = conn.cursor()
     df_realtors=pd.read_json(templates_dict["path_to_data"],lines=True)
-
+    df_realtors.where(pd.notnull(df_realtors), None)
     for index, row in df_realtors.iterrows():
         cur.execute("INSERT INTO realtor  (realtor_id , ds, realtor_name ,city_name )  VALUES (%s, %s, %s, %s)", (row["realtor_id"] , row["ds"] , row["realtor_name"] , row["city_name"] ) )
 
@@ -72,8 +72,8 @@ path_to_data = os.path.join(base_dir, 'data')
 
 # Set dag
 main_dag = DAG(
-    'realtor_analytics',
-    description="Dag realizing import raw data from json export to ",
+    'realtor_analytics4',
+    description="Dag realizing import raw data from json export to ", 
     schedule_interval="@daily",
     default_args=default_args,
 )
@@ -131,7 +131,6 @@ drop_stats_table = PostgresOperator(
     postgres_conn_id="local_db_analytics",
 )
 
-# Calculation number pets by owner
 calculate_number_pets_by_owner = PostgresOperator(
     dag=main_dag,
     task_id="calculate_number_pets_by_owner",
@@ -245,21 +244,21 @@ delete_review_partition = PostgresOperator(
 
 
 
-def insert_agent_values(conn, table, templates_dict, **kwargs):   
-    print ("_______________________________________________BEGIN_______________________________________") 
-    print(templates_dict["var_ds"]) 
+def insert_agent_values(conn, table, templates_dict, **kwargs):    
+
     cur = conn.cursor()
     df_agents=pd.read_json(templates_dict["path_to_data"],lines=True)
+    df_agents.where(pd.notnull(df_agents), None)
     for index, row in df_agents.iterrows():
         cur.execute("INSERT INTO agent  (realtor_agent_id , ds, realtor_agent_name ,realtor_id, user_id, user_name, is_enabled, role, role_label )  VALUES (%s, %s, %s, %s,%s, %s, %s, %s,%s)", (    row["realtor_agent_id"] , row["ds"], row["realtor_agent_name"] ,row["realtor_id"], row["user_id"], row["user_name"], row["is_enabled"], row["role"], row["role_label"] ) )
     conn.commit()
     cur.close()
-    print ("_______________________________________________END_______________________________________") 
 
 
 def insert_event_values(conn, table, templates_dict, **kwargs):   
     cur = conn.cursor()
     df_events=pd.read_json(templates_dict["path_to_data"],lines=True)
+    df_events.where(pd.notnull(df_events), None)
     for index, row in df_events.iterrows():
         cur.execute("INSERT INTO event  (event_id , ds, event_created_date ,event_page_main_category,realtor_id )  VALUES (%s, %s, %s, %s, %s)", (row["event_id"] , row["ds"], row["event_created_date"] ,row["event_page_main_category"], row["realtor_id"]  ) )
     conn.commit()
@@ -267,30 +266,40 @@ def insert_event_values(conn, table, templates_dict, **kwargs):
 
     
 def insert_listing_values(conn, table, templates_dict, **kwargs):   
+    print ("_______________________________________________BEGIN_______________________________________")   
+    print(templates_dict["var_ds"]) 
     cur = conn.cursor()
-    df_listings=pd.read_json(templates_dict["path_to_data"],lines=True)
-    for index, row in df_listings.iterrows():
+    df_listing = pd.read_json(templates_dict["path_to_data"],lines=True).fillna(None)
+    for index, row in  df_listing.iterrows():
+        print("listing_id:%s, ds : %s , realtor_id : %s , created_ts : %s , last_updated_ts : %s , listing_name : %s, transaction_type : %s , start_ts : %s , end_ts : %s , item_type : %s" % (row["listing_id"] , row["ds"], row["realtor_id"] ,row["created_ts"], row["last_updated_ts"], row["listing_name"], row["transaction_type"], row["start_ts"], row["end_ts"], row["item_type"] ))
         cur.execute("INSERT INTO listing  (listing_id , ds, realtor_id ,created_ts, last_updated_ts, listing_name, transaction_type, start_ts, end_ts, item_type )  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (row["listing_id"] , row["ds"], row["realtor_id"] ,row["created_ts"], row["last_updated_ts"], row["listing_name"], row["transaction_type"], row["start_ts"], row["end_ts"], row["item_type"] ) )
+    
     conn.commit()
     cur.close()
+    print ("_______________________________________________END_______________________________________") 
 
     
 def insert_past_sale_values(conn, table, templates_dict, **kwargs):   
     cur = conn.cursor()
     df_past_sales=pd.read_json(templates_dict["path_to_data"],lines=True)
+    df_past_sales.where(pd.notnull(df_past_sales), None)
     for index, row in df_past_sales.iterrows():
         cur.execute("INSERT INTO past_sale  (past_sale_id , ds, realtor_id ,created_ts, last_updated_ts, past_sale_name, sale_ts, item_type )  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (row["past_sale_id"] , row["ds"], row["realtor_id"] ,row["created_ts"], row["last_updated_ts"], row["past_sale_name"], row["sale_ts"], row["item_type"] ) )    
     conn.commit()
     cur.close() 
 
     
-def insert_review_values(conn, table, templates_dict, **kwargs):   
+def insert_review_values(conn, table, templates_dict, **kwargs):    
+    print ("_______________________________________________BEGIN_______________________________________") 
+    print(templates_dict["var_ds"]) 
     cur = conn.cursor()
-    df_reviews=pd.read_json(templates_dict["path_to_data"],lines=True)
-    for index, row in df_reviews.iterrows():
+    df_reviews = pd.read_json(templates_dict["path_to_data"],lines=True)
+    df_reviews.where(pd.notnull(df_reviews), None)
+    for index, row in  df_reviews.iterrows():
         cur.execute("INSERT INTO review  (review_id , ds, review_name ,review_ts, realtor_id, type_avis, moderation_status, realtor_recommendation )  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (row["review_id"] , row["ds"], row["review_name"] ,row["review_ts"], row["realtor_id"], row["type_avis"], row["moderation_status"], row["realtor_recommendation"]) )
     conn.commit()
     cur.close() 
+    print ("_______________________________________________END_______________________________________")  
 
 
 
@@ -313,7 +322,7 @@ insert_agent_data = PythonOperator(
 insert_event_data = PythonOperator(
     dag=main_dag,
     task_id=f'insert_{table_event}_data',
-    python_callable= insert_event_values,
+    python_callable= insert_event_values ,
     op_kwargs = {
         "conn" : conn,
         "table": table_event,
@@ -329,7 +338,7 @@ insert_event_data = PythonOperator(
 insert_listing_data = PythonOperator(
     dag=main_dag,
     task_id=f'insert_{table_listing}_data',
-    python_callable= insert_listing_values,
+    python_callable= insert_listing_values ,
     op_kwargs = {
         "conn" : conn,
         "table": table_listing,

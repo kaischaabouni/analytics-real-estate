@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS agent (
     is_enabled BOOLEAN,
     role VARCHAR,
     role_label VARCHAR,
-    PRIMARY KEY (ds, realtor_agent_id)
+    PRIMARY KEY (realtor_agent_id,ds)
 
 );

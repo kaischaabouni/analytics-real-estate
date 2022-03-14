@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS event (
     event_created_date DATE ,
     event_page_main_category VARCHAR,
     realtor_id VARCHAR NOT NULL,
-    PRIMARY KEY (ds, event_id)
+    PRIMARY KEY (event_id, ds)
 
 
 );

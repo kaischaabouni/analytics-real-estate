@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS review (
     type_avis VARCHAR,
     moderation_status VARCHAR,
     realtor_recommendation smallint,
-    PRIMARY KEY (ds, review_id)
+    PRIMARY KEY (review_id, ds)
 );
