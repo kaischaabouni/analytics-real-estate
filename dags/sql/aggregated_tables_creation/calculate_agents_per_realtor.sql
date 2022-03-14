@@ -7,7 +7,6 @@ AS SELECT
     {{ params.table_agent }}.ds,
     {{ params.table_agent }}.is_enabled,
     {{ params.table_agent }}.role, 
-    {{ params.table_agent }}.item_type,
     COUNT({{ params.table_agent }}.realtor_agent_id) AS number_of_agents
 FROM
     {{ params.table_agent }} INNER JOIN {{ params.table_realtor }}
@@ -20,6 +19,5 @@ GROUP BY
     {{ params.table_realtor }}.city_name,
     {{ params.table_agent }}.ds,
     {{ params.table_agent }}.is_enabled,
-    {{ params.table_agent }}.role, 
-    {{ params.table_agent }}.item_type
+    {{ params.table_agent }}.role
 

@@ -14,18 +14,13 @@ from airflow.operators.python_operator import PythonOperator
 
 def insert_realtor_values(conn, table, templates_dict, **kwargs):   
 
-    print ("_______________________________________________BEGIN_______________________________________")  
-    print(templates_dict["var_ds"])
     cur = conn.cursor()
     df_realtors=pd.read_json(templates_dict["path_to_data"],lines=True)
-    df_realtors.where(pd.notnull(df_realtors), None)
+    df_realtors=df_realtors.where(pd.notnull(df_realtors), None)
     for index, row in df_realtors.iterrows():
         cur.execute("INSERT INTO realtor  (realtor_id , ds, realtor_name ,city_name )  VALUES (%s, %s, %s, %s)", (row["realtor_id"] , row["ds"] , row["realtor_name"] , row["city_name"] ) )
-
-
     conn.commit()
     cur.close()
-    print ("_______________________________________________END_______________________________________")
 
 
 default_args = {
@@ -72,7 +67,7 @@ path_to_data = os.path.join(base_dir, 'data')
 
 # Set dag
 main_dag = DAG(
-    'realtor_analytics4',
+    'realtor_analytics13',
     description="Dag realizing import raw data from json export to ", 
     schedule_interval="@daily",
     default_args=default_args,
@@ -123,22 +118,72 @@ insert_realtor_data = PythonOperator(
 )
 
 # Drop table
-drop_stats_table = PostgresOperator(
+drop_stats_tables = PostgresOperator(
     dag=main_dag,
-    task_id="drop_stats_table",
-    sql="DROP TABLE IF EXISTS owner_stats;",
+    task_id="drop_stats_tables",
+    sql="DROP TABLE IF EXISTS agents_per_realtor; DROP TABLE IF EXISTS events_per_realtor; DROP TABLE IF EXISTS listings_per_realtor; DROP TABLE IF EXISTS realtors_per_city; DROP TABLE IF EXISTS reviews_per_realtor; DROP TABLE IF EXISTS sales_per_realtor; ",
     # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
     postgres_conn_id="local_db_analytics",
 )
 
-calculate_number_pets_by_owner = PostgresOperator(
+calculate_agents_per_realtor = PostgresOperator(
     dag=main_dag,
-    task_id="calculate_number_pets_by_owner",
-    sql="sql/calculate_number_pets_by_owner.sql",
+    task_id="calculate_agents_per_realtor",
+    sql="sql/aggregated_tables_creation/calculate_agents_per_realtor.sql",
     # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
     postgres_conn_id="local_db_analytics",
     params=params,
 )
+
+calculate_events_per_realtor = PostgresOperator(
+    dag=main_dag,
+    task_id="calculate_events_per_realtor",
+    sql="sql/aggregated_tables_creation/calculate_events_per_realtor.sql",
+    # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
+    postgres_conn_id="local_db_analytics",
+    params=params,
+)
+
+
+calculate_listings_per_realtor = PostgresOperator(
+    dag=main_dag,
+    task_id="calculate_listings_per_realtor",
+    sql="sql/aggregated_tables_creation/calculate_listings_per_realtor.sql",
+    # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
+    postgres_conn_id="local_db_analytics",
+    params=params,
+)
+
+
+calculate_realtors_per_city = PostgresOperator(
+    dag=main_dag,
+    task_id="calculate_realtors_per_city",
+    sql="sql/aggregated_tables_creation/calculate_realtors_per_city.sql",
+    # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
+    postgres_conn_id="local_db_analytics",
+    params=params,
+)
+
+
+
+calculate_reviews_per_realtor = PostgresOperator(
+    dag=main_dag,
+    task_id="calculate_reviews_per_realtor",
+    sql="sql/aggregated_tables_creation/calculate_reviews_per_realtor.sql",
+    # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
+    postgres_conn_id="local_db_analytics",
+    params=params,
+)
+
+calculate_sales_per_realtor = PostgresOperator( 
+    dag=main_dag,
+    task_id="calculate_sales_per_realtor",
+    sql="sql/aggregated_tables_creation/calculate_sales_per_realtor.sql",
+    # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
+    postgres_conn_id="local_db_analytics",
+    params=params,
+)
+
 
 # End task
 end_task = DummyOperator(
@@ -244,12 +289,14 @@ delete_review_partition = PostgresOperator(
 
 
 
-def insert_agent_values(conn, table, templates_dict, **kwargs):    
+def insert_agent_values(conn, table, templates_dict, **kwargs):     
 
     cur = conn.cursor()
     df_agents=pd.read_json(templates_dict["path_to_data"],lines=True)
-    df_agents.where(pd.notnull(df_agents), None)
+    df_agents=df_agents.where(pd.notnull(df_agents), None)
+
     for index, row in df_agents.iterrows():
+        #print("--->", row["realtor_agent_id"] , row["ds"], row["realtor_agent_name"] ,row["realtor_id"], row["user_id"], row["user_name"], row["is_enabled"], row["role"], row["role_label"] )
         cur.execute("INSERT INTO agent  (realtor_agent_id , ds, realtor_agent_name ,realtor_id, user_id, user_name, is_enabled, role, role_label )  VALUES (%s, %s, %s, %s,%s, %s, %s, %s,%s)", (    row["realtor_agent_id"] , row["ds"], row["realtor_agent_name"] ,row["realtor_id"], row["user_id"], row["user_name"], row["is_enabled"], row["role"], row["role_label"] ) )
     conn.commit()
     cur.close()
@@ -258,7 +305,9 @@ def insert_agent_values(conn, table, templates_dict, **kwargs):
 def insert_event_values(conn, table, templates_dict, **kwargs):   
     cur = conn.cursor()
     df_events=pd.read_json(templates_dict["path_to_data"],lines=True)
-    df_events.where(pd.notnull(df_events), None)
+    df_events=df_events.where(pd.notnull(df_events), None)
+
+
     for index, row in df_events.iterrows():
         cur.execute("INSERT INTO event  (event_id , ds, event_created_date ,event_page_main_category,realtor_id )  VALUES (%s, %s, %s, %s, %s)", (row["event_id"] , row["ds"], row["event_created_date"] ,row["event_page_main_category"], row["realtor_id"]  ) )
     conn.commit()
@@ -266,23 +315,21 @@ def insert_event_values(conn, table, templates_dict, **kwargs):
 
     
 def insert_listing_values(conn, table, templates_dict, **kwargs):   
-    print ("_______________________________________________BEGIN_______________________________________")   
-    print(templates_dict["var_ds"]) 
     cur = conn.cursor()
-    df_listing = pd.read_json(templates_dict["path_to_data"],lines=True).fillna(None)
+    df_listing = pd.read_json(templates_dict["path_to_data"],lines=True)
+    df_listing=df_listing.where(pd.notnull(df_listing), None)
+
     for index, row in  df_listing.iterrows():
-        print("listing_id:%s, ds : %s , realtor_id : %s , created_ts : %s , last_updated_ts : %s , listing_name : %s, transaction_type : %s , start_ts : %s , end_ts : %s , item_type : %s" % (row["listing_id"] , row["ds"], row["realtor_id"] ,row["created_ts"], row["last_updated_ts"], row["listing_name"], row["transaction_type"], row["start_ts"], row["end_ts"], row["item_type"] ))
         cur.execute("INSERT INTO listing  (listing_id , ds, realtor_id ,created_ts, last_updated_ts, listing_name, transaction_type, start_ts, end_ts, item_type )  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (row["listing_id"] , row["ds"], row["realtor_id"] ,row["created_ts"], row["last_updated_ts"], row["listing_name"], row["transaction_type"], row["start_ts"], row["end_ts"], row["item_type"] ) )
     
     conn.commit()
     cur.close()
-    print ("_______________________________________________END_______________________________________") 
 
     
 def insert_past_sale_values(conn, table, templates_dict, **kwargs):   
     cur = conn.cursor()
     df_past_sales=pd.read_json(templates_dict["path_to_data"],lines=True)
-    df_past_sales.where(pd.notnull(df_past_sales), None)
+    df_past_sales=df_past_sales.where(pd.notnull(df_past_sales), None)
     for index, row in df_past_sales.iterrows():
         cur.execute("INSERT INTO past_sale  (past_sale_id , ds, realtor_id ,created_ts, last_updated_ts, past_sale_name, sale_ts, item_type )  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (row["past_sale_id"] , row["ds"], row["realtor_id"] ,row["created_ts"], row["last_updated_ts"], row["past_sale_name"], row["sale_ts"], row["item_type"] ) )    
     conn.commit()
@@ -290,16 +337,13 @@ def insert_past_sale_values(conn, table, templates_dict, **kwargs):
 
     
 def insert_review_values(conn, table, templates_dict, **kwargs):    
-    print ("_______________________________________________BEGIN_______________________________________") 
-    print(templates_dict["var_ds"]) 
     cur = conn.cursor()
     df_reviews = pd.read_json(templates_dict["path_to_data"],lines=True)
-    df_reviews.where(pd.notnull(df_reviews), None)
+    df_reviews=df_reviews.where(pd.notnull(df_reviews), None)
     for index, row in  df_reviews.iterrows():
-        cur.execute("INSERT INTO review  (review_id , ds, review_name ,review_ts, realtor_id, type_avis, moderation_status, realtor_recommendation )  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (row["review_id"] , row["ds"], row["review_name"] ,row["review_ts"], row["realtor_id"], row["type_avis"], row["moderation_status"], row["realtor_recommendation"]) )
+        cur.execute("INSERT INTO review  (review_id , ds, review_name ,review_ts, realtor_id, type_avis, moderation_status, realtor_recommendation )  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (row["review_id"] , row["ds"], row["review_name"] ,row["review_ts"], row["realtor_id"], row["type"], row["moderation_status"], row["realtor_recommendation"]) )
     conn.commit()
     cur.close() 
-    print ("_______________________________________________END_______________________________________")  
 
 
 
@@ -384,11 +428,16 @@ insert_review_data = PythonOperator(
 
 # Define dependencies
 start_task >> create_realtor_table >> delete_realtor_partition >> insert_realtor_data
-insert_realtor_data >> create_agent_table >> delete_agent_partition >> insert_agent_data >> end_task
-insert_realtor_data >> create_event_table >> delete_event_partition >> insert_event_data >> end_task
-insert_realtor_data >> create_listing_table >> delete_listing_partition >> insert_listing_data >> end_task
-insert_realtor_data >> create_past_sale_table >> delete_past_sale_partition >> insert_past_sale_data >> end_task
-insert_realtor_data >> create_review_table >> delete_review_partition >> insert_review_data >> end_task
-
+insert_realtor_data >> create_agent_table >> delete_agent_partition >> insert_agent_data >> drop_stats_tables
+insert_realtor_data >> create_event_table >> delete_event_partition >> insert_event_data >> drop_stats_tables
+insert_realtor_data >> create_listing_table >> delete_listing_partition >> insert_listing_data >> drop_stats_tables
+insert_realtor_data >> create_past_sale_table >> delete_past_sale_partition >> insert_past_sale_data >> drop_stats_tables
+insert_realtor_data >> create_review_table >> delete_review_partition >> insert_review_data >> drop_stats_tables
+drop_stats_tables >> calculate_agents_per_realtor >> end_task
+drop_stats_tables >> calculate_events_per_realtor >> end_task
+drop_stats_tables >> calculate_listings_per_realtor >> end_task
+drop_stats_tables >> calculate_reviews_per_realtor >> end_task
+drop_stats_tables >> calculate_sales_per_realtor >> end_task
+drop_stats_tables >> calculate_realtors_per_city >> end_task
 
 #>> drop_stats_table >> calculate_number_pets_by_owner >> end_task
