@@ -11,6 +11,7 @@ from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.python_operator import PythonOperator
 
 
+
 def insert_values(conn, table, templates_dict, **kwargs):
     """
     Insert data from a JSON (NEW LINE DELIMITER) to a postgres table (connection)
@@ -26,7 +27,21 @@ def insert_values(conn, table, templates_dict, **kwargs):
     :return: This function return nothing, data should appears in DB table given in paramter
     """
     # Candidate have to implement this function
-    pass
+    #pass
+    print ("_______________________________________________BEGIN_______________________________________")
+    print(templates_dict["var_test"])
+    cur = conn.cursor()
+    df_pets=pd.read_json(templates_dict["path_to_data"],lines=True)
+
+    for index, row in df_pets.iterrows():
+        cur.execute("INSERT INTO pet  (ds , name , pet_type , birth_date , owner)  VALUES (%s, %s, %s, %s, %s)", (row["ds"] , row["name"] , row["pet_type"] , row["birth_date"] , row["owner"]) )
+
+
+    print ("_______________________________________________END_______________________________________")
+
+
+    conn.commit()
+    cur.close()
 
 
 default_args = {
@@ -53,12 +68,14 @@ params={
 base_dir = os.path.dirname(__file__)
 path_to_data = os.path.join(base_dir, 'data')
 
-# Set dag
+# Set dag 
 main_dag = DAG(
     'db_analytics_example',
     description="Example dag about how to make calculation on data in postgres db",
-    schedule_interval="@once",
+    schedule_interval="@daily",
     default_args=default_args,
+    catchup=False
+
 )
 
 ## Set tasks
@@ -83,7 +100,8 @@ delete_partition = PostgresOperator(
     dag=main_dag,
     task_id=f'delete_{table}_partition',
     sql=f"DELETE FROM {table}" + " WHERE ds = '{{ ds }}';",
-    # !! Connection is created in the docker-compose file, see line which contains `AIRFLOW_CONN_LOCAL_DB_ANALYTICS`
+    # !! Connection is created in the docker-compose file, see line which contains `
+    # `
     postgres_conn_id="local_db_analytics",
 )
 
@@ -99,6 +117,7 @@ insert_raw_data = PythonOperator(
     },
     templates_dict = {
         "path_to_data": os.path.join(path_to_data, table, f'{table}') + "_{{ ds_nodash }}.json",
+        "var_test" : "hqhqhq '{{ ds }}'"
     },
 )
 
